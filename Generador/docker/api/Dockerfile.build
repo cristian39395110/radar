@@ -1,0 +1,12 @@
+FROM node:18-alpine
+
+WORKDIR /api
+
+COPY ./api/package*.json .
+
+RUN yarn
+
+COPY ./api .
+
+RUN yarn build
+

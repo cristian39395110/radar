@@ -1,0 +1,11 @@
+a {
+  color: white;
+}
+
+form {
+  padding: 2rem;
+  margin-top: 45px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}

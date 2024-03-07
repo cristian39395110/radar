@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  front:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./front:/app
+    command: yarn build
+    env_file:
+      - ./configs/front/.env.dev
+  predictions:
+    build:
+      context: ./docker/video-analize
+    working_dir: /video-analize
+    restart: always
+    volumes:
+      - /home/server/Documents/videos:/videos
+      - /home/server/Documents/images:/images
+      - ./video-analize:/video-analize
+    command: python3 ./main.py
+    depends_on:
+      - api
+  api:
+    image: node:18-alpine
+    command: yarn start
+    working_dir: /api
+    restart: always
+    volumes:
+      - ./api:/api
+      - /home/server/Documents/videos:/videos
+      - /home/server/Documents/images:/images
+      - /home/server/Documents/reports:/reports
+    environment:
+      DATABASE_USERNAME: doopler
+      DATABASE_PASSWORD: 123456
+      DATABASE_HOST: db
+      DATABASE_DB_NAME: doppler
+      DATABASE_PORT: 27017
+      SECRET_KEY_JWT: 1c95f6c6fadf61d292fa315724127b79
+      ADMIN_PASSWORD: doppler
+      SECRET: 123456789
+      API_KEY: doppler-solutions-test
+    depends_on:
+      - db
+  csv-converter:
+    restart: always
+    image: node:18-alpine
+    working_dir: /app
+    volumes: 
+        - ./csv-converter:/app
+    command: yarn start
+  db:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: doopler
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - db-doc:/data/db
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./front/dist:/usr/share/nginx/html
+    env_file:
+      - ./configs/front/.env.dev
+    depends_on:
+      - front
+      - api
+
+volumes:
+  db-doc:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: /home/server/Documents/database
